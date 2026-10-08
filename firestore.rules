@@ -1,0 +1,458 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 0. Global Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // 1. Validation Blueprint: UserProfile
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+        'ownerId', 'displayName', 'institution', 'department',
+        'semester', 'targetStudyHoursPerDay', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'displayName', 'institution', 'department',
+        'semester', 'targetStudyHoursPerDay', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+      data.institution is string && data.institution.size() >= 1 && data.institution.size() <= 160 &&
+      data.department is string && data.department.size() >= 1 && data.department.size() <= 120 &&
+      data.semester is string && data.semester.size() >= 1 && data.semester.size() <= 60 &&
+      data.targetStudyHoursPerDay is number && data.targetStudyHoursPerDay >= 0 && data.targetStudyHoursPerDay <= 24 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 2. Validation Blueprint: Exam
+    function isValidExam(data) {
+      return data.keys().hasAll([
+        'ownerId', 'examName', 'subject', 'examDate', 'examTime',
+        'location', 'syllabus', 'notes', 'remindersEnabled',
+        'remind7Days', 'remind3Days', 'remind1Day', 'remindExamDay',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'examName', 'subject', 'examDate', 'examTime',
+        'location', 'syllabus', 'notes', 'remindersEnabled',
+        'remind7Days', 'remind3Days', 'remind1Day', 'remindExamDay',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.examName is string && data.examName.size() >= 1 && data.examName.size() <= 140 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.examDate is string && data.examDate.size() >= 8 && data.examDate.size() <= 20 &&
+      data.examTime is string && data.examTime.size() >= 1 && data.examTime.size() <= 20 &&
+      data.location is string && data.location.size() <= 140 &&
+      data.syllabus is string && data.syllabus.size() <= 2000 &&
+      data.notes is string && data.notes.size() <= 2000 &&
+      data.remindersEnabled is bool &&
+      data.remind7Days is bool &&
+      data.remind3Days is bool &&
+      data.remind1Day is bool &&
+      data.remindExamDay is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 3. Validation Blueprint: AcademicTask
+    function isValidAcademicTask(data) {
+      return data.keys().hasAll([
+        'ownerId', 'title', 'subject', 'category', 'description',
+        'dueDate', 'dueTime', 'priority', 'completed', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'title', 'subject', 'category', 'description',
+        'dueDate', 'dueTime', 'priority', 'completed', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.category is string && data.category.size() <= 30 &&
+      data.category in ['Assignment', 'Homework', 'Lab Record', 'Project', 'Submission', 'Study Task'] &&
+      data.description is string && data.description.size() <= 2000 &&
+      data.dueDate is string && data.dueDate.size() >= 8 && data.dueDate.size() <= 20 &&
+      data.dueTime is string && data.dueTime.size() >= 1 && data.dueTime.size() <= 20 &&
+      data.priority is string && data.priority.size() <= 10 &&
+      data.priority in ['High', 'Medium', 'Low'] &&
+      data.completed is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 4. Validation Blueprint: Note
+    function isValidNote(data) {
+      return data.keys().hasAll([
+        'ownerId', 'title', 'semester', 'subject', 'topic', 'content',
+        'attachmentName', 'attachmentType', 'attachmentDataUrl', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'title', 'semester', 'subject', 'topic', 'content',
+        'attachmentName', 'attachmentType', 'attachmentDataUrl', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.semester is string && data.semester.size() >= 1 && data.semester.size() <= 60 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 140 &&
+      data.content is string && data.content.size() >= 1 && data.content.size() <= 50000 &&
+      data.attachmentName is string && data.attachmentName.size() <= 200 &&
+      data.attachmentType is string && data.attachmentType.size() <= 80 &&
+      data.attachmentDataUrl is string && data.attachmentDataUrl.size() <= 350000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 5. Validation Blueprint: TimetableSlot
+    function isValidTimetableSlot(data) {
+      return data.keys().hasAll([
+        'ownerId', 'day', 'periodNumber', 'startTime', 'endTime',
+        'subject', 'teacher', 'classroom', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'day', 'periodNumber', 'startTime', 'endTime',
+        'subject', 'teacher', 'classroom', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.day is string && data.day.size() <= 15 &&
+      data.day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] &&
+      data.periodNumber is number && data.periodNumber >= 1 && data.periodNumber <= 20 &&
+      data.startTime is string && data.startTime.size() >= 1 && data.startTime.size() <= 20 &&
+      data.endTime is string && data.endTime.size() >= 1 && data.endTime.size() <= 20 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.teacher is string && data.teacher.size() <= 100 &&
+      data.classroom is string && data.classroom.size() <= 80 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 6. Validation Blueprint: StudyPlan
+    function isValidStudyPlan(data) {
+      return data.keys().hasAll([
+        'ownerId', 'title', 'subject', 'targetDate', 'planContent', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'title', 'subject', 'targetDate', 'planContent', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.targetDate is string && data.targetDate.size() >= 8 && data.targetDate.size() <= 20 &&
+      data.planContent is string && data.planContent.size() >= 1 && data.planContent.size() <= 25000 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 7. Validation Blueprint: NotificationItem
+    function isValidNotificationItem(data) {
+      return data.keys().hasAll([
+        'ownerId', 'title', 'message', 'category', 'read', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'title', 'message', 'category', 'read', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.message is string && data.message.size() >= 1 && data.message.size() <= 1000 &&
+      data.category is string && data.category.size() <= 20 &&
+      data.category in ['Exam', 'Assignment', 'Homework', 'Group', 'Study', 'System'] &&
+      data.read is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 8. Validation Blueprint: StudentGroup
+    function isValidStudentGroup(data) {
+      return data.keys().hasAll([
+        'ownerId', 'creatorName', 'name', 'subject', 'semester',
+        'description', 'pinnedAnnouncement', 'visibility', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId', 'creatorName', 'name', 'subject', 'semester',
+        'description', 'pinnedAnnouncement', 'visibility', 'createdAt', 'updatedAt'
+      ]) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.creatorName is string && data.creatorName.size() >= 1 && data.creatorName.size() <= 100 &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 140 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 100 &&
+      data.semester is string && data.semester.size() >= 1 && data.semester.size() <= 60 &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 1000 &&
+      data.pinnedAnnouncement is string && data.pinnedAnnouncement.size() <= 1000 &&
+      data.visibility is string && data.visibility.size() <= 10 &&
+      data.visibility == 'campus' &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // 9. Validation Blueprint: GroupPost
+    function isValidGroupPost(data, parentGroupId) {
+      return data.keys().hasAll([
+        'groupId', 'ownerId', 'authorName', 'postType', 'title', 'content',
+        'attachmentName', 'attachmentDataUrl', 'isPinned', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'groupId', 'ownerId', 'authorName', 'postType', 'title', 'content',
+        'attachmentName', 'attachmentDataUrl', 'isPinned', 'createdAt', 'updatedAt'
+      ]) &&
+      data.groupId is string && data.groupId.size() >= 1 && data.groupId.size() <= 128 &&
+      data.groupId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.groupId == parentGroupId &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+      data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 100 &&
+      data.postType is string && data.postType.size() <= 30 &&
+      data.postType in ['Note', 'Study Material', 'Important Question', 'Announcement', 'Discussion'] &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+      data.content is string && data.content.size() >= 1 && data.content.size() <= 15000 &&
+      data.attachmentName is string && data.attachmentName.size() <= 200 &&
+      data.attachmentDataUrl is string && data.attachmentDataUrl.size() <= 350000 &&
+      data.isPinned is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Collection 1: /users/{userId}
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && isOwner(userId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(userId) && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(userId) && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'institution', 'department', 'semester', 'targetStudyHoursPerDay', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(userId) && isOwner(userId);
+    }
+
+    // Collection 2: /exams/{examId}
+    match /exams/{examId} {
+      allow get: if isSignedIn() && isValidId(examId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(examId) &&
+        isValidExam(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(examId) &&
+        isValidExam(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action: Update exam details or reminder settings
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'examName', 'subject', 'examDate', 'examTime', 'location', 'syllabus', 'notes',
+            'remindersEnabled', 'remind7Days', 'remind3Days', 'remind1Day', 'remindExamDay', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerified() && isValidId(examId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 3: /tasks/{taskId}
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isValidId(taskId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(taskId) &&
+        isValidAcademicTask(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(taskId) &&
+        isValidAcademicTask(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Toggle completion status
+          incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+          // Action 2: Edit task metadata
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'subject', 'category', 'description', 'dueDate', 'dueTime', 'priority', 'completed', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerified() && isValidId(taskId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 4: /notes/{noteId}
+    match /notes/{noteId} {
+      allow get: if isSignedIn() && isValidId(noteId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(noteId) &&
+        isValidNote(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(noteId) &&
+        isValidNote(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'semester', 'subject', 'topic', 'content',
+          'attachmentName', 'attachmentType', 'attachmentDataUrl', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(noteId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 5: /timetable/{slotId}
+    match /timetable/{slotId} {
+      allow get: if isSignedIn() && isValidId(slotId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(slotId) &&
+        isValidTimetableSlot(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(slotId) &&
+        isValidTimetableSlot(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'day', 'periodNumber', 'startTime', 'endTime', 'subject', 'teacher', 'classroom', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(slotId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 6: /studyPlans/{planId}
+    match /studyPlans/{planId} {
+      allow get: if isSignedIn() && isValidId(planId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(planId) &&
+        isValidStudyPlan(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(planId) &&
+        isValidStudyPlan(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'subject', 'targetDate', 'planContent', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(planId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 7: /notifications/{notificationId}
+    match /notifications/{notificationId} {
+      allow get: if isSignedIn() && isValidId(notificationId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(notificationId) &&
+        isValidNotificationItem(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(notificationId) &&
+        isValidNotificationItem(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']);
+      allow delete: if isVerified() && isValidId(notificationId) && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 8: /groups/{groupId}
+    match /groups/{groupId} {
+      allow get: if isSignedIn() && isValidId(groupId) && existing().visibility == 'campus';
+      allow list: if isSignedIn() && resource.data.visibility == 'campus';
+      allow create: if isVerified() && isValidId(groupId) &&
+        isValidStudentGroup(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerified() && isValidId(groupId) &&
+        isValidStudentGroup(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'subject', 'semester', 'description', 'pinnedAnnouncement', 'updatedAt'
+        ]);
+      allow delete: if isVerified() && isValidId(groupId) && existing().ownerId == request.auth.uid;
+
+      // Subcollection 9: /groups/{groupId}/posts/{postId}
+      match /posts/{postId} {
+        allow get: if isSignedIn() && isValidId(groupId) && isValidId(postId) &&
+          existing().groupId == groupId &&
+          exists(/databases/$(database)/documents/groups/$(groupId));
+        allow list: if isSignedIn() && resource.data.groupId == groupId;
+        allow create: if isVerified() && isValidId(groupId) && isValidId(postId) &&
+          isValidGroupPost(incoming(), groupId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/groups/$(groupId));
+        allow update: if isVerified() && isValidId(groupId) && isValidId(postId) &&
+          isValidGroupPost(incoming(), groupId) &&
+          existing().ownerId == request.auth.uid &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().groupId == existing().groupId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/groups/$(groupId)) && (
+            // Action 1: Pin/Unpin post
+            incoming().diff(existing()).affectedKeys().hasOnly(['isPinned', 'updatedAt']) ||
+            // Action 2: Edit post content
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'postType', 'title', 'content', 'attachmentName', 'attachmentDataUrl', 'isPinned', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerified() && isValidId(groupId) && isValidId(postId) &&
+          exists(/databases/$(database)/documents/groups/$(groupId)) && (
+            existing().ownerId == request.auth.uid ||
+            get(/databases/$(database)/documents/groups/$(groupId)).data.ownerId == request.auth.uid
+          );
+      }
+    }
+  }
+}

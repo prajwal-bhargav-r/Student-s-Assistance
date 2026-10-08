@@ -1,0 +1,6 @@
+{
+  "name": "Student Academic Assistant",
+  "description": "All-in-one AI-powered academic companion for students to manage exams, timetables, notes, tasks, study planning, and collaborative groups.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

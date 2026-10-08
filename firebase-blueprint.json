@@ -1,0 +1,637 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Student academic profile and preferences without raw PII.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the authenticated student.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Student full name or preferred name.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "institution": {
+          "type": "string",
+          "description": "College or university name.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "department": {
+          "type": "string",
+          "description": "Major or academic department (e.g., AIML, Computer Science).",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "semester": {
+          "type": "string",
+          "description": "Current academic semester (e.g., Semester 1).",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "targetStudyHoursPerDay": {
+          "type": "number",
+          "description": "Daily target study hours."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "displayName",
+        "institution",
+        "department",
+        "semester",
+        "targetStudyHoursPerDay",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Scheduled student examination with countdown and reminder settings.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "examName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "examDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "examTime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "location": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 140
+        },
+        "syllabus": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "remindersEnabled": {
+          "type": "boolean"
+        },
+        "remind7Days": {
+          "type": "boolean"
+        },
+        "remind3Days": {
+          "type": "boolean"
+        },
+        "remind1Day": {
+          "type": "boolean"
+        },
+        "remindExamDay": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "examName",
+        "subject",
+        "examDate",
+        "examTime",
+        "location",
+        "syllabus",
+        "notes",
+        "remindersEnabled",
+        "remind7Days",
+        "remind3Days",
+        "remind1Day",
+        "remindExamDay",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AcademicTask": {
+      "title": "AcademicTask",
+      "description": "Homework, assignment, lab record, project, or submission task.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Assignment", "Homework", "Lab Record", "Project", "Submission", "Study Task"]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "dueDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "dueTime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["High", "Medium", "Low"]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "subject",
+        "category",
+        "description",
+        "dueDate",
+        "dueTime",
+        "priority",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Student academic note organized by semester, subject, and topic with optional uploaded document content.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "semester": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50000
+        },
+        "attachmentName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "attachmentType": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "attachmentDataUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 350000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "semester",
+        "subject",
+        "topic",
+        "content",
+        "attachmentName",
+        "attachmentType",
+        "attachmentDataUrl",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TimetableSlot": {
+      "title": "TimetableSlot",
+      "description": "Scheduled class or period in the student's weekly timetable.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "day": {
+          "type": "string",
+          "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        },
+        "periodNumber": {
+          "type": "number"
+        },
+        "startTime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "endTime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "teacher": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "classroom": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "day",
+        "periodNumber",
+        "startTime",
+        "endTime",
+        "subject",
+        "teacher",
+        "classroom",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "Structured multi-day study plan generated for an upcoming exam or subject.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "targetDate": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "planContent": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 25000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "subject",
+        "targetDate",
+        "planContent",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Academic alert or notification stored for the student.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Exam", "Assignment", "Homework", "Group", "Study", "System"]
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "message",
+        "category",
+        "read",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StudentGroup": {
+      "title": "StudentGroup",
+      "description": "Collaborative academic study group for sharing notes, questions, and announcements.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "creatorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "semester": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "pinnedAnnouncement": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["campus"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "creatorName",
+        "name",
+        "subject",
+        "semester",
+        "description",
+        "pinnedAnnouncement",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "GroupPost": {
+      "title": "GroupPost",
+      "description": "Resource, note, question, or announcement shared inside a student group.",
+      "type": "object",
+      "properties": {
+        "groupId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "postType": {
+          "type": "string",
+          "enum": ["Note", "Study Material", "Important Question", "Announcement", "Discussion"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 15000
+        },
+        "attachmentName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "attachmentDataUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 350000
+        },
+        "isPinned": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "groupId",
+        "ownerId",
+        "authorName",
+        "postType",
+        "title",
+        "content",
+        "attachmentName",
+        "attachmentDataUrl",
+        "isPinned",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Student profile document keyed by auth UID."
+    },
+    "/exams/{examId}": {
+      "schema": { "$ref": "#/entities/Exam" },
+      "description": "Student exam entries with countdown and reminder preferences."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/AcademicTask" },
+      "description": "Student homework, assignments, lab records, and projects."
+    },
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "Student saved academic notes and uploaded documents."
+    },
+    "/timetable/{slotId}": {
+      "schema": { "$ref": "#/entities/TimetableSlot" },
+      "description": "Weekly timetable slots per student."
+    },
+    "/studyPlans/{planId}": {
+      "schema": { "$ref": "#/entities/StudyPlan" },
+      "description": "AI study plans saved by the student."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "Student academic notifications and alerts."
+    },
+    "/groups/{groupId}": {
+      "schema": { "$ref": "#/entities/StudentGroup" },
+      "description": "Academic study groups accessible across campus."
+    },
+    "/groups/{groupId}/posts/{postId}": {
+      "schema": { "$ref": "#/entities/GroupPost" },
+      "description": "Posts, notes, and discussions inside a specific student group."
+    }
+  }
+}
